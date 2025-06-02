@@ -10,18 +10,20 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Gunakan folder /tmp di Vercel
     const filePath = path.join('/tmp', `qris-${Date.now()}.jpg`);
 
     await qrisDinamis.makeFile(qris, {
       nominal: jumlah,
-      path: filePath
+      path: filePath,
     });
 
-    const imgBuffer = fs.readFileSync(filePath);
+    // Baca hasil file JPG dari /tmp dan kirimkan ke user
+    const buffer = fs.readFileSync(filePath);
     res.setHeader('Content-Type', 'image/jpeg');
-    res.send(imgBuffer);
+    res.send(buffer);
   } catch (err) {
-    console.error('Gagal membuat file QR:', err);
-    res.status(500).send('Gagal membuat QR');
+    console.error('Error generate QR:', err);
+    res.status(500).send('Gagal generate QR');
   }
 };
