@@ -1,22 +1,17 @@
-import QRCode from 'qrcode';
+const QRCode = require('qrcode');
 
-export default async function handler(req, res) {
-  const { text, format } = req.query;
+module.exports = async (req, res) => {
+  const { text } = req.query;
 
   if (!text) {
-    return res.status(400).json({ error: 'Parameter "text" dibutuhkan' });
+    return res.status(400).send('Parameter "text" dibutuhkan');
   }
 
   try {
-    if (format === 'png') {
-      const buffer = await QRCode.toBuffer(text);
-      res.setHeader('Content-Type', 'image/png');
-      res.send(buffer);
-    } else {
-      const dataUrl = await QRCode.toDataURL(text);
-      res.status(200).json({ text, qrcode: dataUrl });
-    }
+    const buffer = await QRCode.toBuffer(text);
+    res.setHeader('Content-Type', 'image/png');
+    res.send(buffer);
   } catch (err) {
-    res.status(500).json({ error: 'Gagal generate QR Code' });
+    res.status(500).send('Gagal generate QR Code');
   }
-}
+};
