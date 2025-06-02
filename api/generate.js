@@ -1,5 +1,4 @@
 const qrisDinamis = require('qris-dinamis');
-const fs = require('fs');
 
 module.exports = async (req, res) => {
   const { qris, jumlah } = req.query;
@@ -9,18 +8,13 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const filePath = `/tmp/qris-${Date.now()}.jpg`;
+    // Misal qris-dinamis ada method makeBuffer() mirip makeFile()
+    const buffer = await qrisDinamis.makeBuffer(qris, { nominal: jumlah });
 
-    await qrisDinamis.makeFile(qris, {
-      nominal: jumlah,
-      path: filePath, // WAJIB pakai /tmp di Vercel
-    });
-
-    const buffer = fs.readFileSync(filePath);
     res.setHeader('Content-Type', 'image/jpeg');
     res.send(buffer);
-  } catch (err) {
-    console.error('DETAIL ERROR:', err);
-    res.status(500).send('Gagal generate QR: ' + err.message);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Gagal generate QR: ' + error.message);
   }
 };
