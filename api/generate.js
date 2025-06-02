@@ -1,3 +1,7 @@
+const qrisDinamis = require('qris-dinamis'); // ← WAJIB ada
+const fs = require('fs');
+const path = require('path');
+
 module.exports = async (req, res) => {
   const { qris, jumlah } = req.query;
 
@@ -17,7 +21,7 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'image/jpeg');
     res.send(buffer);
   } catch (err) {
-    console.error('DETAIL ERROR:', err); // << tambahkan log
+    console.error('DETAIL ERROR:', err);
     res.status(500).send('Gagal generate QR: ' + err.message);
   }
 };
