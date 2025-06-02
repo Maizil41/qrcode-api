@@ -1,6 +1,5 @@
-const qrisDinamis = require('qris-dinamis'); // ← WAJIB ada
+const qrisDinamis = require('qris-dinamis');
 const fs = require('fs');
-const path = require('path');
 
 module.exports = async (req, res) => {
   const { qris, jumlah } = req.query;
@@ -14,7 +13,7 @@ module.exports = async (req, res) => {
 
     await qrisDinamis.makeFile(qris, {
       nominal: jumlah,
-      path: filePath,
+      path: filePath, // WAJIB pakai /tmp di Vercel
     });
 
     const buffer = fs.readFileSync(filePath);
