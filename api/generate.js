@@ -1,8 +1,8 @@
-import { makeFile } from 'qris-dinamis';
-import fs from 'fs';
-import path from 'path';
+const qrisDinamis = require('qris-dinamis');
+const fs = require('fs');
+const path = require('path');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   const { qris, jumlah } = req.query;
 
   if (!qris || !jumlah) {
@@ -10,18 +10,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const outputPath = path.join('/tmp', `qris-${Date.now()}.jpg`);
+    const filePath = path.join('/tmp', `qris-${Date.now()}.jpg`);
 
-    await makeFile(qris, {
+    await qrisDinamis.makeFile(qris, {
       nominal: jumlah,
-      path: outputPath,
+      path: filePath
     });
 
-    const imageBuffer = fs.readFileSync(outputPath);
+    const imgBuffer = fs.readFileSync(filePath);
     res.setHeader('Content-Type', 'image/jpeg');
-    res.send(imageBuffer);
+    res.send(imgBuffer);
   } catch (err) {
-    console.error('Gagal generate QR:', err);
-    res.status(500).send('Gagal generate QR');
+    console.error('Gagal membuat file QR:', err);
+    res.status(500).send('Gagal membuat QR');
   }
-}
+};
