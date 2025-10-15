@@ -1,8 +1,6 @@
 import QRCode from 'qrcode';
 
-// ====== QRIS statis kamu taruh di sini ======
 const QRIS_STATIC = "00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214207143969394550303UMI51440014ID.CO.QRIS.WWW0215ID20253829587880303UMI5204481253033605802ID5922MUTIARA CELL OK23137256012ACEH SELATAN61052371162070703A0163044BAF";
-// Ganti nilai di atas dengan string QRIS statismu (pastikan benar & lengkap)
 
 function ConvertCRC16(str) {
     let crc = 0xFFFF;
@@ -21,19 +19,10 @@ function ConvertCRC16(str) {
 }
 
 function convertQris(qris, nominal) {
-    // hapus CRC lama (4 char terakhir)
     qris = qris.slice(0, -4);
-
-    // ubah tag 01 dari 011 -> 012 (statis -> dinamis) jika ada
     let step1 = qris.replace("010211", "010212");
-
-    // pecah pada country code "5802ID"
     let step2 = step1.split("5802ID");
-
-    // bangun field amount (ID 54)
     const uang = "54" + nominal.length.toString().padStart(2, '0') + nominal + "5802ID";
-
-    // gabung kembali dan hitung CRC baru
     let hasil = step2[0] + uang + step2[1];
     hasil += ConvertCRC16(hasil);
 
@@ -42,13 +31,10 @@ function convertQris(qris, nominal) {
 
 export default async function handler(req, res) {
     try {
-        // hanya butuh jumlah; qris sudah didefinisikan statis
         const { jumlah } = req.query;
         if (!jumlah) {
             return res.status(400).send('Parameter "jumlah" harus diisi');
         }
-
-        // pastikan nominal hanya angka
         const nominal = String(jumlah).trim().replace(/\D/g, '');
         if (!nominal) {
             return res.status(400).send('Parameter "jumlah" harus berupa angka (tanpa pemisah/koma)');
