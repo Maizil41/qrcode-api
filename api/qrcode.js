@@ -1,4 +1,7 @@
 import QRCode from "qrcode";
+import sharp from "sharp";
+import path from "path";
+import fs from "fs";
 
 function ConvertCRC16(str) {
   let crc = 0xFFFF;
@@ -61,8 +64,30 @@ export default async function handler(req, res) {
     const qrBuffer = await QRCode.toBuffer(qrisDinamis, {
       width: 512,
       margin: 4,
-      errorCorrectionLevel: "M"
+      errorCorrectionLevel: "H"
     });
+
+    const logoPath = path.join(process.cwd(), "public/logo.png");
+
+    if (!fs.existsSync(logoPath)) {
+      return res.status(500).json({
+        error: "Logo tidak ditemukan"
+      });
+    }
+
+    const logoBuffer = await sharp(logoPath)
+      .resize(110, 110)
+      .toBuffer();
+
+    const finalBuffer = await sharp(qrBuffer)
+      .composite([
+        {
+          input: logoBuffer,
+          gravity: "center"
+        }
+      ])
+      .png()
+      .toBuffer();
 
     res.setHeader("Content-Type", "image/png");
     res.setHeader(
@@ -70,7 +95,7 @@ export default async function handler(req, res) {
       `inline; filename="qris-${id}.png"`
     );
 
-    res.send(qrBuffer);
+    res.send(finalBuffer);
 
   } catch (err) {
     res.status(500).json({
