@@ -23,34 +23,46 @@ function ConvertCRC16(str) {
 }
 
 function convertQris(qris, nominal) {
-  qris = qris.slice(0, -4);
+  let data = qris.trim();
+  data = data.slice(0, -4);
+  data = data.replace("010211", "010212");
+  data = data.replace(/54\d{2}\d+/g, "");
 
-  const step1 = qris.replace("010211", "010212");
-  const step2 = step1.split("5802ID");
-
-  const uang =
+  const amount =
     "54" +
     nominal.length.toString().padStart(2, "0") +
-    nominal +
-    "5802ID";
+    nominal;
 
-  const hasil = step2[0] + uang + step2[1];
+  if (data.includes("5802ID")) {
+    data = data.replace("5802ID", amount + "5802ID");
+  } else {
+    data += amount;
+  }
 
-  return hasil + ConvertCRC16(hasil);
+  data += "6304";
+
+  const crc = ConvertCRC16(data);
+
+  return data + crc;
 }
 
 export default async function handler(req, res) {
   try {
-    const { id, harga } = req.query;
+    const { id, harga, string } = req.query;
 
-    if (!id || !harga) {
+    if (!id || !harga || !string) {
       return res.status(400).json({
-        error: "Parameter id & harga wajib"
+        error: "Parameter string, id & harga wajib"
       });
     }
 
-    const QRIS_STATIC =
-"00020101021126670016COM.NOBUBANK.WWW01189360050300000907180214032208368264740303UMI51440014ID.CO.QRIS.WWW0215ID20254190269630303UMI5204481253033605802ID5919TOKO MUTIARA PONSEL6012ACEH SELATAN61052371162070703A0163045139";
+    const QRIS_STATIC = String(string).trim();
+
+    if (!QRIS_STATIC.startsWith("000201")) {
+      return res.status(400).json({
+        error: "QRIS tidak valid"
+      });
+    }
 
     const nominal = String(harga).replace(/\D/g, "");
     if (!nominal) {
@@ -69,25 +81,23 @@ export default async function handler(req, res) {
 
     const logoPath = path.join(process.cwd(), "public/logo.png");
 
-    if (!fs.existsSync(logoPath)) {
-      return res.status(500).json({
-        error: "Logo tidak ditemukan"
-      });
+    let finalBuffer = qrBuffer;
+
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = await sharp(logoPath)
+        .resize(110, 110)
+        .toBuffer();
+
+      finalBuffer = await sharp(qrBuffer)
+        .composite([
+          {
+            input: logoBuffer,
+            gravity: "center"
+          }
+        ])
+        .png()
+        .toBuffer();
     }
-
-    const logoBuffer = await sharp(logoPath)
-      .resize(110, 110)
-      .toBuffer();
-
-    const finalBuffer = await sharp(qrBuffer)
-      .composite([
-        {
-          input: logoBuffer,
-          gravity: "center"
-        }
-      ])
-      .png()
-      .toBuffer();
 
     res.setHeader("Content-Type", "image/png");
     res.setHeader(
